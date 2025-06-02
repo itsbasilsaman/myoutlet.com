@@ -1,182 +1,295 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, BarChart2, FileText, Plus, Tag, UtensilsCrossed, LogOut, ChevronDown,  Menu } from "lucide-react"
-import Image from "next/image"
+import Image from 'next/image';
+import {
+  Bell,
+  BarChart2,
+  FileText,
+  Plus,
+  UtensilsCrossed,
+  LogOut,
+  Menu,
+  Settings,
+  Globe,
+  Database,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  TrendingUp,
+  Users,
+  DollarSign,
+  ShoppingCart,
+  Activity,
+  Eye,
+  Edit,
+  RefreshCw,
+} from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Switch } from "@/components/switch"
+import { Switch } from "@/components/ui/switch"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Progress } from "@/components/ui/progress"
 
-type User = {
+// Types for Super Admin Dashboard
+type RestaurantRegistration = {
   id: string
   name: string
-  avatar: string
-  email?: string
-  phone?: string
-  joinDate?: string
-}
-
-type Restaurant = {
-  id: string
-  name: string
+  ownerName: string
+  email: string
+  phone: string
+  address: string
   cuisine: string
-  rating: number
-  status: 'active' | 'inactive'
+  requestedSubdomain: string
+  status: "pending" | "approved" | "rejected"
+  submittedAt: string
+  documents: string[]
 }
 
-type Coupon = {
+type SubdomainMapping = {
   id: string
-  code: string
-  discount: string
-  validUntil: string
-  status: 'active' | 'expired'
+  restaurantName: string
+  subdomain: string
+  customDomain?: string
+  status: "active" | "inactive" | "pending"
+  sslStatus: "active" | "pending" | "failed"
+  lastChecked: string
 }
 
-type LanguageOption = {
-  code: string
-  name: string
-  flag: string
+type GoogleSheetIntegration = {
+  id: string
+  restaurantName: string
+  sheetId: string
+  lastSync: string
+  status: "healthy" | "warning" | "error"
+  errorMessage?: string
+  menuItems: number
 }
 
-type MenuItem = {
-  title: string
-  icon: React.ReactNode
-  path: string
-  active: boolean
+type ExternalIntegration = {
+  id: string
+  platform: "swiggy" | "zomato" | "uber-eats"
+  restaurantName: string
+  apiKey: string
+  status: "connected" | "disconnected" | "error"
+  lastSync: string
+  ordersToday: number
 }
 
-export default function Dashboard() {
+type Subscription = {
+  id: string
+  restaurantName: string
+  plan: "basic" | "premium" | "enterprise"
+  status: "active" | "expired" | "cancelled"
+  startDate: string
+  endDate: string
+  revenue: number
+}
+
+type PlatformMetrics = {
+  totalRestaurants: number
+  activeRestaurants: number
+  totalUsers: number
+  totalOrders: number
+  totalRevenue: number
+  ordersToday: number
+  revenueToday: number
+  avgOrderValue: number
+}
+
+export default function SuperAdminDashboard() {
   const router = useRouter()
   const [darkMode, setDarkMode] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [selectedLanguage, setSelectedLanguage] = useState<LanguageOption>({
-    code: "en",
-    name: "English",
-    flag: "/flags/us.svg"
+  const [activeSection, setActiveSection] = useState("overview")
+
+  // Sample data - In real app, this would come from APIs
+  const [platformMetrics] = useState<PlatformMetrics>({
+    totalRestaurants: 156,
+    activeRestaurants: 142,
+    totalUsers: 12847,
+    totalOrders: 45623,
+    totalRevenue: 2847592,
+    ordersToday: 234,
+    revenueToday: 15420,
+    avgOrderValue: 65.8,
   })
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false)
-  const [showUserDetails, setShowUserDetails] = useState<number | null>(null)
-  const [activeSection, setActiveSection] = useState('users')
 
-  const languages: LanguageOption[] = [
-    { code: "en", name: "English", flag: "/flags/us.svg" },
-    { code: "es", name: "Spanish", flag: "/flags/es.svg" },
-    { code: "fr", name: "French", flag: "/flags/fr.svg" },
-    { code: "de", name: "German", flag: "/flags/de.svg" },
-    { code: "hi", name: "Hindi", flag: "/flags/in.svg" },
-  ]
-
-  const users: User[] = [
-    { 
-      id: "#223448", 
-      name: "Lithium bils", 
-      avatar: "/placeholder.svg?height=40&width=40",
-      email: "lithium@example.com",
-      phone: "+1 234 567 890",
-      joinDate: "2023-01-15"
-    },
-    { 
-      id: "#223449", 
-      name: "Marco mala", 
-      avatar: "/placeholder.svg?height=40&width=40",
-      email: "marco@example.com",
-      phone: "+1 345 678 901",
-      joinDate: "2023-02-20"
-    },
-    { 
-      id: "#223450", 
-      name: "Tiffsn tipu", 
-      avatar: "/placeholder.svg?height=40&width=40",
-      email: "tiffsn@example.com",
-      phone: "+1 456 789 012",
-      joinDate: "2023-03-10"
-    },
-    { 
-      id: "#223451", 
-      name: "John Doe", 
-      avatar: "/placeholder.svg?height=40&width=40",
-      email: "john@example.com",
-      phone: "+1 567 890 123",
-      joinDate: "2023-04-05"
-    },
-    { 
-      id: "#223452", 
-      name: "Jane Smith", 
-      avatar: "/placeholder.svg?height=40&width=40",
-      email: "jane@example.com",
-      phone: "+1 678 901 234",
-      joinDate: "2023-05-12"
-    },
-    { 
-      id: "#223453", 
-      name: "Robert Johnson", 
-      avatar: "/placeholder.svg?height=40&width=40",
-      email: "robert@example.com",
-      phone: "+1 789 012 345",
-      joinDate: "2023-06-18"
-    },
-  ]
-
-  const restaurants: Restaurant[] = [
-    { id: "R001", name: "Gourmet Paradise", cuisine: "International", rating: 4.5, status: 'active' },
-    { id: "R002", name: "Pizza Haven", cuisine: "Italian", rating: 4.2, status: 'active' },
-    { id: "R003", name: "Sushi World", cuisine: "Japanese", rating: 4.7, status: 'active' },
-    { id: "R004", name: "Burger Joint", cuisine: "American", rating: 3.9, status: 'inactive' },
-    { id: "R005", name: "Curry House", cuisine: "Indian", rating: 4.3, status: 'active' },
-  ]
-
-  const coupons: Coupon[] = [
-    { id: "C001", code: "SUMMER20", discount: "20%", validUntil: "2023-08-31", status: 'active' },
-    { id: "C002", code: "WELCOME10", discount: "10%", validUntil: "2023-12-31", status: 'active' },
-    { id: "C003", code: "FREESHIP", discount: "Free Delivery", validUntil: "2023-07-15", status: 'active' },
-    { id: "C004", code: "HOLIDAY25", discount: "25%", validUntil: "2022-12-31", status: 'expired' },
-  ]
-
-  const menuItems: MenuItem[] = [
+  const [pendingRegistrations] = useState<RestaurantRegistration[]>([
     {
-      title: "Dashboard",
+      id: "REG001",
+      name: "Spice Garden",
+      ownerName: "Rajesh Kumar",
+      email: "rajesh@spicegarden.com",
+      phone: "+91 98765 43210",
+      address: "123 MG Road, Bangalore",
+      cuisine: "Indian",
+      requestedSubdomain: "spicegarden",
+      status: "pending",
+      submittedAt: "2024-01-15T10:30:00Z",
+      documents: ["license.pdf", "tax_certificate.pdf"],
+    },
+    {
+      id: "REG002",
+      name: "Pizza Corner",
+      ownerName: "Marco Rossi",
+      email: "marco@pizzacorner.com",
+      phone: "+91 87654 32109",
+      address: "456 Brigade Road, Bangalore",
+      cuisine: "Italian",
+      requestedSubdomain: "pizzacorner",
+      status: "pending",
+      submittedAt: "2024-01-14T15:45:00Z",
+      documents: ["license.pdf", "health_certificate.pdf"],
+    },
+  ])
+
+  const [subdomainMappings] = useState<SubdomainMapping[]>([
+    {
+      id: "SUB001",
+      restaurantName: "Burger Palace",
+      subdomain: "burgerpalace.myoutlet.com",
+      customDomain: "burgerpalace.com",
+      status: "active",
+      sslStatus: "active",
+      lastChecked: "2024-01-15T12:00:00Z",
+    },
+    {
+      id: "SUB002",
+      restaurantName: "Sushi World",
+      subdomain: "sushiworld.myoutlet.com",
+      status: "active",
+      sslStatus: "pending",
+      lastChecked: "2024-01-15T11:30:00Z",
+    },
+  ])
+
+  const [googleSheetIntegrations] = useState<GoogleSheetIntegration[]>([
+    {
+      id: "GS001",
+      restaurantName: "Burger Palace",
+      sheetId: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
+      lastSync: "2024-01-15T12:15:00Z",
+      status: "healthy",
+      menuItems: 45,
+    },
+    {
+      id: "GS002",
+      restaurantName: "Sushi World",
+      sheetId: "1CxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
+      lastSync: "2024-01-15T10:30:00Z",
+      status: "warning",
+      errorMessage: "Some menu items missing prices",
+      menuItems: 32,
+    },
+  ])
+
+  const [externalIntegrations] = useState<ExternalIntegration[]>([
+    {
+      id: "EXT001",
+      platform: "swiggy",
+      restaurantName: "Burger Palace",
+      apiKey: "sk_live_***************",
+      status: "connected",
+      lastSync: "2024-01-15T12:00:00Z",
+      ordersToday: 23,
+    },
+    {
+      id: "EXT002",
+      platform: "zomato",
+      restaurantName: "Sushi World",
+      apiKey: "zk_live_***************",
+      status: "error",
+      lastSync: "2024-01-14T18:30:00Z",
+      ordersToday: 0,
+    },
+  ])
+
+  const [subscriptions] = useState<Subscription[]>([
+    {
+      id: "SUB001",
+      restaurantName: "Burger Palace",
+      plan: "premium",
+      status: "active",
+      startDate: "2024-01-01",
+      endDate: "2024-12-31",
+      revenue: 2400,
+    },
+    {
+      id: "SUB002",
+      restaurantName: "Sushi World",
+      plan: "basic",
+      status: "active",
+      startDate: "2024-01-15",
+      endDate: "2025-01-14",
+      revenue: 1200,
+    },
+  ])
+
+  const menuItems = [
+    {
+      title: "Overview",
       icon: <BarChart2 className="h-5 w-5" />,
-      path: "/dashboard",
-      active: activeSection === 'dashboard'
+      path: "overview",
+      active: activeSection === "overview",
     },
     {
-      title: "User list",
+      title: "Restaurant Registrations",
       icon: <FileText className="h-5 w-5" />,
-      path: "/users",
-      active: activeSection === 'users'
+      path: "registrations",
+      active: activeSection === "registrations",
     },
     {
-      title: "Add item",
-      icon: <Plus className="h-5 w-5" />,
-      path: "/add-item",
-      active: activeSection === 'add-item'
+      title: "Subdomain Management",
+      icon: <Globe className="h-5 w-5" />,
+      path: "subdomains",
+      active: activeSection === "subdomains",
     },
     {
-      title: "Offer coupons",
-      icon: <Tag className="h-5 w-5" />,
-      path: "/coupons",
-      active: activeSection === 'coupons'
+      title: "Google Sheets Monitor",
+      icon: <Database className="h-5 w-5" />,
+      path: "sheets",
+      active: activeSection === "sheets",
     },
     {
-      title: "Restaurants",
-      icon: <UtensilsCrossed className="h-5 w-5" />,
-      path: "/restaurants",
-      active: activeSection === 'restaurants'
+      title: "External Integrations",
+      icon: <Settings className="h-5 w-5" />,
+      path: "integrations",
+      active: activeSection === "integrations",
+    },
+    {
+      title: "Subscriptions",
+      icon: <DollarSign className="h-5 w-5" />,
+      path: "subscriptions",
+      active: activeSection === "subscriptions",
+    },
+    {
+      title: "Platform Analytics",
+      icon: <TrendingUp className="h-5 w-5" />,
+      path: "analytics",
+      active: activeSection === "analytics",
     },
   ]
 
-  const toggleUserDetails = (index: number) => {
-    setShowUserDetails(showUserDetails === index ? null : index)
+  const handleApproveRegistration = (id: string) => {
+    // In real app, this would call an API
+    console.log(`Approving registration ${id}`)
+    // Update state or refetch data
   }
 
-  const handleLanguageChange = (language: LanguageOption) => {
-    setSelectedLanguage(language)
-    setShowLanguageDropdown(false)
+  const handleRejectRegistration = (id: string) => {
+    // In real app, this would call an API
+    console.log(`Rejecting registration ${id}`)
+    // Update state or refetch data
   }
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
+  const handleRefreshIntegration = (id: string) => {
+    // In real app, this would call an API to refresh the integration
+    console.log(`Refreshing integration ${id}`)
   }
 
   const navigateToSection = (section: string) => {
@@ -185,15 +298,13 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    // Apply dark mode class to body
     if (darkMode) {
-      document.documentElement.classList.add('dark')
+      document.documentElement.classList.add("dark")
     } else {
-      document.documentElement.classList.remove('dark')
+      document.documentElement.classList.remove("dark")
     }
   }, [darkMode])
 
-  // Responsive sidebar toggle
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
@@ -203,15 +314,17 @@ export default function Dashboard() {
       }
     }
 
-    handleResize() // Set initial state
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    handleResize()
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
   }, [])
 
   return (
-    <div className={`flex min-h-screen ${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} transition-colors duration-300`}>
+    <div
+      className={`flex min-h-screen ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"} transition-colors duration-300`}
+    >
       {/* Mobile menu button */}
-      <button 
+      <button
         className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-gray-800 text-white dark:bg-gray-700"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
       >
@@ -219,34 +332,42 @@ export default function Dashboard() {
       </button>
 
       {/* Sidebar */}
-      <div 
-        className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:static inset-y-0 left-0 w-64 border-r ${darkMode ? "border-gray-700 bg-gray-900" : "border-gray-200 bg-white"} flex-shrink-0 z-40 transition-transform duration-300 ease-in-out`}
+      <div
+        className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 fixed md:static inset-y-0 left-0 w-64 border-r ${darkMode ? "border-gray-700 bg-gray-900" : "border-gray-200 bg-white"} flex-shrink-0 z-40 transition-transform duration-300 ease-in-out`}
       >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <Link href="/" className="flex items-center">
-            <Image
-              src="/images/myoutlet.logo.png"
-              alt="myoutlet logo"
-              width={120}
-              height={40}
-              className="h-10"
-            />
+            <div className="flex items-center space-x-2">
+               
+               <Image
+                src="/images/myoutlet.logo.png"
+                alt="Logo"
+                width={32}
+                height={32} // Adjust size as needed
+             
+              />
+            </div>
           </Link>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Super Admin</p>
         </div>
         <nav className="p-4">
           <ul className="space-y-2">
             {menuItems.map((item, index) => (
               <li key={index}>
                 <button
-                  onClick={() => navigateToSection(item.path.substring(1))}
-                  className={`flex items-center w-full p-3 rounded-md transition-all duration-200 ${
-                    item.active 
-                      ? (darkMode ? "bg-yellow-500 text-black" : "bg-yellow-400 text-black") 
-                      : (darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100")
-                  } ${item.active ? 'font-medium' : ''}`}
+                  onClick={() => navigateToSection(item.path)}
+                  className={`flex items-center w-full p-3 rounded-md transition-all duration-200 text-left ${
+                    item.active
+                      ? darkMode
+                        ? "bg-yellow-500 text-black"
+                        : "bg-yellow-400 text-black"
+                      : darkMode
+                        ? "hover:bg-gray-800"
+                        : "hover:bg-gray-100"
+                  } ${item.active ? "font-medium" : ""}`}
                 >
                   <span className="mr-3">{item.icon}</span>
-                  <span>{item.title}</span>
+                  <span className="text-sm">{item.title}</span>
                 </button>
               </li>
             ))}
@@ -260,7 +381,7 @@ export default function Dashboard() {
         <header
           className={`h-16 border-b ${darkMode ? "border-gray-700 bg-gray-900" : "border-gray-200 bg-white"} flex items-center justify-between px-4 md:px-6 sticky top-0 z-30`}
         >
-          <button 
+          <button
             className="md:hidden p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
@@ -272,65 +393,19 @@ export default function Dashboard() {
               <button className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200">
                 <Bell className="h-6 w-6" />
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
-                  6
+                  {pendingRegistrations.length}
                 </span>
               </button>
             </div>
-            
-            <div className="relative">
-              <button 
-                className="flex items-center border rounded-md px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
-                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-              >
-                <Image
-                  src={selectedLanguage.flag}
-                  alt={selectedLanguage.name}
-                  width={20}
-                  height={15}
-                  className="h-4 w-6 mr-2 object-cover rounded-sm"
-                />
-                <span className="text-sm">{selectedLanguage.name}</span>
-                <ChevronDown className="h-4 w-4 ml-1" />
-              </button>
-              
-              {showLanguageDropdown && (
-                <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg ${darkMode ? "bg-gray-800" : "bg-white"} ring-1 ring-black ring-opacity-5 z-50`}>
-                  <div className="py-1">
-                    {languages.map((language) => (
-                      <button
-                        key={language.code}
-                        className={`block px-4 py-2 text-sm w-full text-left ${selectedLanguage.code === language.code ? (darkMode ? "bg-gray-700" : "bg-gray-100") : ""} hover:${darkMode ? "bg-gray-700" : "bg-gray-100"} transition-colors duration-200`}
-                        onClick={() => handleLanguageChange(language)}
-                      >
-                        <div className="flex items-center">
-                          <Image
-                            src={language.flag}
-                            alt={language.name}
-                            width={20}
-                            height={15}
-                            className="h-4 w-6 mr-2 object-cover rounded-sm"
-                          />
-                          {language.name}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            
+
             <div className="flex items-center space-x-2">
               <span className="text-sm hidden sm:inline">Dark mode</span>
-              <Switch 
-                checked={darkMode} 
-                onCheckedChange={toggleDarkMode} 
-                className={`${darkMode ? "bg-gray-600" : "bg-gray-300"}`}
-              />
+              <Switch checked={darkMode} onCheckedChange={setDarkMode} />
             </div>
-            
-            <button 
+
+            <button
               className="flex items-center space-x-1 p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-              onClick={() => router.push('/logout')}
+              onClick={() => router.push("/logout")}
             >
               <LogOut className="h-5 w-5" />
               <span className="hidden sm:inline">Logout</span>
@@ -340,282 +415,664 @@ export default function Dashboard() {
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          {activeSection === 'dashboard' && (
-            <div>
-              <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
+          {activeSection === "overview" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold">Platform Overview</h1>
+                <Button variant="outline" size="sm">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Data
+                </Button>
+              </div>
+
+              {/* Key Metrics Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Restaurants</CardTitle>
+                    <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{platformMetrics.totalRestaurants}</div>
+                    <p className="text-xs text-muted-foreground">{platformMetrics.activeRestaurants} active</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{platformMetrics.totalUsers.toLocaleString()}</div>
+                    <p className="text-xs text-muted-foreground">+12% from last month</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">₹{platformMetrics.totalRevenue.toLocaleString()}</div>
+                    <p className="text-xs text-muted-foreground">
+                      ₹{platformMetrics.revenueToday.toLocaleString()} today
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Orders Today</CardTitle>
+                    <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{platformMetrics.ordersToday}</div>
+                    <p className="text-xs text-muted-foreground">Avg: ₹{platformMetrics.avgOrderValue}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pending Actions</CardTitle>
+                    <CardDescription>Items requiring your attention</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        <span>Restaurant Registrations</span>
+                      </div>
+                      <Badge variant="secondary">{pendingRegistrations.length}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <XCircle className="h-4 w-4 text-red-500" />
+                        <span>Failed Integrations</span>
+                      </div>
+                      <Badge variant="destructive">2</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Activity className="h-4 w-4 text-blue-500" />
+                        <span>System Health Checks</span>
+                      </div>
+                      <Badge variant="outline">All Good</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Activity</CardTitle>
+                    <CardDescription>Latest platform events</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                      <div>
+                        <p className="text-sm font-medium">New restaurant registered</p>
+                        <p className="text-xs text-muted-foreground">Spice Garden - 2 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                      <div>
+                        <p className="text-sm font-medium">Integration updated</p>
+                        <p className="text-xs text-muted-foreground">Swiggy API - 4 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
+                      <div>
+                        <p className="text-sm font-medium">Subscription renewed</p>
+                        <p className="text-xs text-muted-foreground">Burger Palace - 6 hours ago</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {activeSection === "registrations" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold">Restaurant Registrations</h1>
+                <Badge variant="secondary">{pendingRegistrations.length} Pending</Badge>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pending Approvals</CardTitle>
+                  <CardDescription>Review and approve new restaurant registrations</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Restaurant</TableHead>
+                        <TableHead>Owner</TableHead>
+                        <TableHead>Cuisine</TableHead>
+                        <TableHead>Subdomain</TableHead>
+                        <TableHead>Submitted</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingRegistrations.map((registration) => (
+                        <TableRow key={registration.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{registration.name}</div>
+                              <div className="text-sm text-muted-foreground">{registration.address}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{registration.ownerName}</div>
+                              <div className="text-sm text-muted-foreground">{registration.email}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{registration.cuisine}</TableCell>
+                          <TableCell>
+                            <code className="text-sm bg-muted px-2 py-1 rounded">
+                              {registration.requestedSubdomain}.myoutlet.com
+                            </code>
+                          </TableCell>
+                          <TableCell>{new Date(registration.submittedAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleApproveRegistration(registration.id)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleRejectRegistration(registration.id)}
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Reject
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeSection === "subdomains" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold">Subdomain Management</h1>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Mapping
+                </Button>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Domain Mappings</CardTitle>
+                  <CardDescription>Manage restaurant subdomains and custom domains</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Restaurant</TableHead>
+                        <TableHead>Subdomain</TableHead>
+                        <TableHead>Custom Domain</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>SSL</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {subdomainMappings.map((mapping) => (
+                        <TableRow key={mapping.id}>
+                          <TableCell className="font-medium">{mapping.restaurantName}</TableCell>
+                          <TableCell>
+                            <code className="text-sm bg-muted px-2 py-1 rounded">{mapping.subdomain}</code>
+                          </TableCell>
+                          <TableCell>
+                            {mapping.customDomain ? (
+                              <code className="text-sm bg-muted px-2 py-1 rounded">{mapping.customDomain}</code>
+                            ) : (
+                              <span className="text-muted-foreground">None</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={mapping.status === "active" ? "default" : "secondary"}>
+                              {mapping.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                mapping.sslStatus === "active"
+                                  ? "default"
+                                  : mapping.sslStatus === "pending"
+                                    ? "secondary"
+                                    : "destructive"
+                              }
+                            >
+                              {mapping.sslStatus}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button size="sm" variant="outline">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeSection === "sheets" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold">Google Sheets Monitor</h1>
+                <Button>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh All
+                </Button>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Integration Health</CardTitle>
+                  <CardDescription>Monitor Google Sheets API connections and data sync</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Restaurant</TableHead>
+                        <TableHead>Sheet ID</TableHead>
+                        <TableHead>Menu Items</TableHead>
+                        <TableHead>Last Sync</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {googleSheetIntegrations.map((integration) => (
+                        <TableRow key={integration.id}>
+                          <TableCell className="font-medium">{integration.restaurantName}</TableCell>
+                          <TableCell>
+                            <code className="text-sm bg-muted px-2 py-1 rounded">
+                              {integration.sheetId.substring(0, 20)}...
+                            </code>
+                          </TableCell>
+                          <TableCell>{integration.menuItems}</TableCell>
+                          <TableCell>{new Date(integration.lastSync).toLocaleString()}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Badge
+                                variant={
+                                  integration.status === "healthy"
+                                    ? "default"
+                                    : integration.status === "warning"
+                                      ? "secondary"
+                                      : "destructive"
+                                }
+                              >
+                                {integration.status}
+                              </Badge>
+                              {integration.errorMessage && (
+                                <span className="text-xs text-muted-foreground">{integration.errorMessage}</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button size="sm" variant="outline">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleRefreshIntegration(integration.id)}
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeSection === "integrations" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold">External Integrations</h1>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Integration
+                </Button>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Third-Party Platforms</CardTitle>
+                  <CardDescription>
+                    Manage integrations with Swiggy, Zomato, and other delivery platforms
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Platform</TableHead>
+                        <TableHead>Restaurant</TableHead>
+                        <TableHead>API Key</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Orders Today</TableHead>
+                        <TableHead>Last Sync</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {externalIntegrations.map((integration) => (
+                        <TableRow key={integration.id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <div
+                                className={`w-3 h-3 rounded-full ${
+                                  integration.platform === "swiggy"
+                                    ? "bg-orange-500"
+                                    : integration.platform === "zomato"
+                                      ? "bg-red-500"
+                                      : "bg-green-500"
+                                }`}
+                              ></div>
+                              <span className="capitalize font-medium">{integration.platform}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{integration.restaurantName}</TableCell>
+                          <TableCell>
+                            <code className="text-sm bg-muted px-2 py-1 rounded">{integration.apiKey}</code>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={integration.status === "connected" ? "default" : "destructive"}>
+                              {integration.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{integration.ordersToday}</TableCell>
+                          <TableCell>{new Date(integration.lastSync).toLocaleString()}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button size="sm" variant="outline">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleRefreshIntegration(integration.id)}
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeSection === "subscriptions" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold">Subscription Management</h1>
+                <div className="flex space-x-2">
+                  <Badge variant="outline">
+                    Total Revenue: ₹{subscriptions.reduce((sum, sub) => sum + sub.revenue, 0).toLocaleString()}
+                  </Badge>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div className={`p-6 rounded-lg shadow ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                  <h3 className="text-lg font-medium mb-2">Total Users</h3>
-                  <p className="text-3xl font-bold text-yellow-500">1,248</p>
-                  <p className="text-sm text-green-500 mt-2">↑ 12% from last month</p>
-                </div>
-                <div className={`p-6 rounded-lg shadow ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                  <h3 className="text-lg font-medium mb-2">Active Restaurants</h3>
-                  <p className="text-3xl font-bold text-yellow-500">84</p>
-                  <p className="text-sm text-green-500 mt-2">↑ 5% from last month</p>
-                </div>
-                <div className={`p-6 rounded-lg shadow ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                  <h3 className="text-lg font-medium mb-2">Active Coupons</h3>
-                  <p className="text-3xl font-bold text-yellow-500">23</p>
-                  <p className="text-sm text-red-500 mt-2">↓ 2% from last month</p>
-                </div>
-              </div>
-              
-              <div className={`p-6 rounded-lg shadow ${darkMode ? "bg-gray-800" : "bg-white"} mb-6`}>
-                <h3 className="text-lg font-medium mb-4">Recent Activity</h3>
-                <div className="space-y-4">
-                  {[1, 2, 3, 4, 5].map((item) => (
-                    <div key={item} className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 mr-3"></div>
-                        <div>
-                          <p className="font-medium">Activity {item}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">2 hours ago</p>
-                        </div>
-                      </div>
-                      <button className="text-sm text-yellow-500 hover:text-yellow-600">View</button>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Basic Plan</CardTitle>
+                    <CardDescription>₹100/month</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{subscriptions.filter((s) => s.plan === "basic").length}</div>
+                    <p className="text-sm text-muted-foreground">Active subscriptions</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Premium Plan</CardTitle>
+                    <CardDescription>₹200/month</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{subscriptions.filter((s) => s.plan === "premium").length}</div>
+                    <p className="text-sm text-muted-foreground">Active subscriptions</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Enterprise Plan</CardTitle>
+                    <CardDescription>₹500/month</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {subscriptions.filter((s) => s.plan === "enterprise").length}
                     </div>
-                  ))}
-                </div>
+                    <p className="text-sm text-muted-foreground">Active subscriptions</p>
+                  </CardContent>
+                </Card>
               </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>All Subscriptions</CardTitle>
+                  <CardDescription>Monitor and manage restaurant subscriptions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Restaurant</TableHead>
+                        <TableHead>Plan</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Start Date</TableHead>
+                        <TableHead>End Date</TableHead>
+                        <TableHead>Revenue</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {subscriptions.map((subscription) => (
+                        <TableRow key={subscription.id}>
+                          <TableCell className="font-medium">{subscription.restaurantName}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">
+                              {subscription.plan}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={subscription.status === "active" ? "default" : "destructive"}>
+                              {subscription.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{subscription.startDate}</TableCell>
+                          <TableCell>{subscription.endDate}</TableCell>
+                          <TableCell>₹{subscription.revenue.toLocaleString()}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button size="sm" variant="outline">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </div>
           )}
 
-          {activeSection === 'users' && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">User list</h1>
-                <button 
-                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-md transition-colors duration-200"
-                  onClick={() => router.push('/users/add')}
-                >
-                  Add New User
-                </button>
+          {activeSection === "analytics" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold">Platform Analytics</h1>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm">
+                    Last 7 days
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    Last 30 days
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    Last 90 days
+                  </Button>
+                </div>
               </div>
 
-              <div className={`rounded-lg overflow-hidden shadow-sm ${darkMode ? "bg-gray-800" : "bg-white"} transition-all duration-300`}>
-                <div className="grid grid-cols-3 p-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="text-gray-500 dark:text-gray-400 font-medium">User name</div>
-                  <div className="text-gray-500 dark:text-gray-400 font-medium">User ID</div>
-                  <div></div>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Growth Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">+12.5%</div>
+                    <Progress value={75} className="mt-2" />
+                    <p className="text-xs text-muted-foreground mt-2">New restaurants this month</p>
+                  </CardContent>
+                </Card>
 
-                {users.map((user, index) => (
-                  <div key={index}>
-                    <div
-                      className={`grid grid-cols-3 p-4 items-center border-b last:border-0 border-gray-200 dark:border-gray-700 hover:${darkMode ? "bg-gray-700" : "bg-gray-50"} transition-colors duration-200 cursor-pointer`}
-                      onClick={() => toggleUserDetails(index)}
-                    >
-                      <div className="flex items-center">
-                        <Image
-                          src={user.avatar || "/placeholder.svg"}
-                          alt={user.name}
-                          width={40}
-                          height={40}
-                          className="h-10 w-10 rounded-full mr-3 object-cover"
-                        />
-                        <span>{user.name}</span>
-                      </div>
-                      <div>{user.id}</div>
-                      <div className="flex justify-end">
-                        <button 
-                          className="px-4 py-1 bg-red-100 dark:bg-red-900 text-red-500 dark:text-red-300 rounded-full hover:bg-red-200 dark:hover:bg-red-800 transition-colors duration-200"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/users/${user.id}`)
-                          }}
-                        >
-                          View details
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {showUserDetails === index && (
-                      <div className={`p-4 border-b border-gray-200 dark:border-gray-700 ${darkMode ? "bg-gray-750" : "bg-gray-50"} animate-fadeIn`}>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Order Volume</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">45,623</div>
+                    <Progress value={85} className="mt-2" />
+                    <p className="text-xs text-muted-foreground mt-2">Total orders processed</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Revenue Growth</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">+18.2%</div>
+                    <Progress value={90} className="mt-2" />
+                    <p className="text-xs text-muted-foreground mt-2">Compared to last month</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Customer Satisfaction</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">4.8/5</div>
+                    <Progress value={96} className="mt-2" />
+                    <p className="text-xs text-muted-foreground mt-2">Average rating</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Top Performing Restaurants</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {[
+                        { name: "Burger Palace", orders: 1234, revenue: 45600 },
+                        { name: "Sushi World", orders: 987, revenue: 38900 },
+                        { name: "Pizza Corner", orders: 876, revenue: 32100 },
+                        { name: "Spice Garden", orders: 654, revenue: 28700 },
+                      ].map((restaurant, index) => (
+                        <div key={index} className="flex items-center justify-between">
                           <div>
-                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</h3>
-                            <p>{user.email}</p>
+                            <div className="font-medium">{restaurant.name}</div>
+                            <div className="text-sm text-muted-foreground">{restaurant.orders} orders</div>
                           </div>
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</h3>
-                            <p>{user.phone}</p>
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Join Date</h3>
-                            <p>{user.joinDate}</p>
+                          <div className="text-right">
+                            <div className="font-medium">₹{restaurant.revenue.toLocaleString()}</div>
+                            <div className="text-sm text-muted-foreground">Revenue</div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Platform Health</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span>API Response Time</span>
+                        <Badge variant="default">125ms</Badge>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeSection === 'add-item' && (
-            <div>
-              <h1 className="text-2xl font-bold mb-6">Add New Item</h1>
-              <div className={`p-6 rounded-lg shadow ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                <form className="space-y-6">
-                  <div>
-                    <label htmlFor="itemName" className="block text-sm font-medium mb-1">Item Name</label>
-                    <input
-                      type="text"
-                      id="itemName"
-                      className={`w-full p-3 rounded-md border ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"} focus:ring-2 focus:ring-yellow-500 focus:border-transparent`}
-                      placeholder="Enter item name"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="itemCategory" className="block text-sm font-medium mb-1">Category</label>
-                    <select
-                      id="itemCategory"
-                      className={`w-full p-3 rounded-md border ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"} focus:ring-2 focus:ring-yellow-500 focus:border-transparent`}
-                    >
-                      <option value="">Select a category</option>
-                      <option value="food">Food</option>
-                      <option value="drink">Drink</option>
-                      <option value="dessert">Dessert</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="itemPrice" className="block text-sm font-medium mb-1">Price</label>
-                    <input
-                      type="number"
-                      id="itemPrice"
-                      className={`w-full p-3 rounded-md border ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"} focus:ring-2 focus:ring-yellow-500 focus:border-transparent`}
-                      placeholder="Enter price"
-                      step="0.01"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="itemDescription" className="block text-sm font-medium mb-1">Description</label>
-                    <textarea
-                      id="itemDescription"
-                      rows={4}
-                      className={`w-full p-3 rounded-md border ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"} focus:ring-2 focus:ring-yellow-500 focus:border-transparent`}
-                      placeholder="Enter item description"
-                    ></textarea>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="itemImage" className="block text-sm font-medium mb-1">Image</label>
-                    <div className="flex items-center justify-center w-full">
-                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <Plus className="h-8 w-8 text-gray-400" />
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Click to upload or drag and drop</p>
-                        </div>
-                        <input id="itemImage" type="file" className="hidden" />
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <span>Uptime</span>
+                        <Badge variant="default">99.9%</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Active Integrations</span>
+                        <Badge variant="default">98%</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Error Rate</span>
+                        <Badge variant="secondary">0.1%</Badge>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-md transition-colors duration-200"
-                    >
-                      Add Item
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {activeSection === 'coupons' && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Offer Coupons</h1>
-                <button 
-                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-md transition-colors duration-200"
-                  onClick={() => router.push('/coupons/add')}
-                >
-                  Create Coupon
-                </button>
-              </div>
-
-              <div className={`rounded-lg overflow-hidden shadow-sm ${darkMode ? "bg-gray-800" : "bg-white"} transition-all duration-300`}>
-                <div className="grid grid-cols-4 p-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="text-gray-500 dark:text-gray-400 font-medium">Coupon ID</div>
-                  <div className="text-gray-500 dark:text-gray-400 font-medium">Code</div>
-                  <div className="text-gray-500 dark:text-gray-400 font-medium">Discount</div>
-                  <div className="text-gray-500 dark:text-gray-400 font-medium">Status</div>
-                </div>
-
-                {coupons.map((coupon, index) => (
-                  <div 
-                    key={index}
-                    className={`grid grid-cols-4 p-4 items-center border-b last:border-0 border-gray-200 dark:border-gray-700 hover:${darkMode ? "bg-gray-700" : "bg-gray-50"} transition-colors duration-200`}
-                  >
-                    <div>{coupon.id}</div>
-                    <div className="font-mono">{coupon.code}</div>
-                    <div>{coupon.discount}</div>
-                    <div>
-                      <span className={`px-3 py-1 rounded-full text-sm ${
-                        coupon.status === 'active' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                      }`}>
-                        {coupon.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeSection === 'restaurants' && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Restaurants</h1>
-                <button 
-                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-md transition-colors duration-200"
-                  onClick={() => router.push('/restaurants/add')}
-                >
-                  Add Restaurant
-                </button>
-              </div>
-
-              <div className={`rounded-lg overflow-hidden shadow-sm ${darkMode ? "bg-gray-800" : "bg-white"} transition-all duration-300`}>
-                <div className="grid grid-cols-5 p-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="text-gray-500 dark:text-gray-400 font-medium">ID</div>
-                  <div className="text-gray-500 dark:text-gray-400 font-medium">Name</div>
-                  <div className="text-gray-500 dark:text-gray-400 font-medium">Cuisine</div>
-                  <div className="text-gray-500 dark:text-gray-400 font-medium">Rating</div>
-                  <div className="text-gray-500 dark:text-gray-400 font-medium">Status</div>
-                </div>
-
-                {restaurants.map((restaurant, index) => (
-                  <div 
-                    key={index}
-                    className={`grid grid-cols-5 p-4 items-center border-b last:border-0 border-gray-200 dark:border-gray-700 hover:${darkMode ? "bg-gray-700" : "bg-gray-50"} transition-colors duration-200`}
-                  >
-                    <div>{restaurant.id}</div>
-                    <div className="font-medium">{restaurant.name}</div>
-                    <div>{restaurant.cuisine}</div>
-                    <div className="flex items-center">
-                      <span className="text-yellow-500 mr-1">★</span>
-                      {restaurant.rating}
-                    </div>
-                    <div>
-                      <span className={`px-3 py-1 rounded-full text-sm ${
-                        restaurant.status === 'active' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                      }`}>
-                        {restaurant.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  </CardContent>
+                </Card>
               </div>
             </div>
           )}
@@ -624,10 +1081,7 @@ export default function Dashboard() {
 
       {/* Mobile menu overlay */}
       {mobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={() => setMobileMenuOpen(false)} />
       )}
     </div>
   )

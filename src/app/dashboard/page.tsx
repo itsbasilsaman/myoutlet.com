@@ -325,15 +325,23 @@ export default function SuperAdminDashboard() {
     >
       {/* Mobile menu button */}
       <button
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-gray-800 text-white dark:bg-gray-700"
+        className="md:hidden fixed top-4 left-4 z-[60] p-2 rounded-md bg-gray-800 text-white dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors duration-200"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
       >
         <Menu className="h-6 w-6" />
       </button>
 
+      {/* Mobile menu overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-[45] md:hidden" 
+          onClick={() => setMobileMenuOpen(false)} 
+        />
+      )}
+
       {/* Sidebar */}
       <div
-        className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 fixed md:static inset-y-0 left-0 w-64 border-r ${darkMode ? "border-gray-700 bg-gray-900" : "border-gray-200 bg-white"} flex-shrink-0 z-40 transition-transform duration-300 ease-in-out`}
+        className={`${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 fixed md:static inset-y-0 left-0 w-64 border-r ${darkMode ? "border-gray-700 bg-gray-900" : "border-gray-200 bg-white"} flex-shrink-0 z-[50] transition-transform duration-300 ease-in-out`}
       >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <Link href="/" className="flex items-center">
@@ -398,9 +406,13 @@ export default function SuperAdminDashboard() {
               </button>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full">
               <span className="text-sm hidden sm:inline">Dark mode</span>
-              <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+              <Switch 
+                checked={darkMode} 
+                onCheckedChange={setDarkMode}
+                className="data-[state=checked]:bg-yellow-500"
+              />
             </div>
 
             <button
@@ -1078,11 +1090,6 @@ export default function SuperAdminDashboard() {
           )}
         </main>
       </div>
-
-      {/* Mobile menu overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={() => setMobileMenuOpen(false)} />
-      )}
     </div>
   )
 }

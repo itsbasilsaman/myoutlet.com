@@ -1,23 +1,38 @@
 import { adminEndPoint } from "@/constants/endPointsUrl";
 import api from "@/lib/axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
+import { AxiosError } from "axios";
 
 export const registerAdminAction = createAsyncThunk(
-  "restaurant/registerAdmin",
+  "/restaurant/registerAdmin",
   async (
-    {email, password}
-    : {
+    {
+      email,
+      password,
+    }: {
       email: string;
       password: string;
     },
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.post(adminEndPoint.REGISTER, {email, password});
+      const basicAuth = btoa("myoutlet:myoutlet.app@124");
+
+      const response = await api.post(
+        `${adminEndPoint.AUTH}/register`,
+        { email, password },
+        {
+          headers: {
+            Authorization: `Basic ${basicAuth}`,
+            skip: true,
+          },
+        }
+      );
       return response.data;
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as AxiosError<{ message: string }>;
       return rejectWithValue(
-        err.response?.data?.message || "Failed to fetch tables"
+        error.response?.data?.message || "Failed to register admin"
       );
     }
   }

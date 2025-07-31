@@ -99,7 +99,7 @@ export default function LoginForm() {
               )}
             </button>
             <div className="text-center text-sm mt-4">
-              Don't have a account?{" "}
+              Dont have a account?{" "}
               <button
                 type="button"
                 onClick={() => router.push("/auth/signup")}

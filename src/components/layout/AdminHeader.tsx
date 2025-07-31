@@ -1,6 +1,6 @@
 "use client"
 
-import React, { use } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Menu, LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";

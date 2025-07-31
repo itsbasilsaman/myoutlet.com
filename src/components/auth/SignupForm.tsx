@@ -3,7 +3,6 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import { registerAdminAction } from "@/store/actions/auth/registerAdminAction";
 import { useAppDispatch } from "@/hooks/useDispatch";
 
@@ -37,13 +36,18 @@ export default function RegisterForm() {
 
       console.log(response,"response")
 
-      setSuccess(true);
       setEmail("");
       setPassword("");
       setConfirmPassword("");
-      router.replace('/auth/login');
-    } catch (err: any) {
-      setError(err.message);
+      if(registerAdminAction.fulfilled.match(response)) {
+        setSuccess(true);
+        router.replace('/auth/login');
+      } else {
+        setError(response.payload as string);
+      }
+    } catch (err) {
+      console.error("Registration failed:", err);
+      setError("Failed to register admin");
     } finally {
       setIsLoading(false);
     }

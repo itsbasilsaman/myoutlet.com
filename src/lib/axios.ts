@@ -11,17 +11,21 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = store.getState().admin.token || Cookies.get("accessToken")
+    if (config?.headers?.skipAuth) {
+      delete config.headers.skipAuth;
+      return config;
+    }
 
+    const token = store.getState().admin.token || Cookies.get("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
+
 
 
 export default api;

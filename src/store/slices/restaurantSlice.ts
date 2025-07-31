@@ -1,17 +1,22 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { fetchAllRestaurants } from "../actions/restaurants/fetchAllStoresAction";
 import { blockRestaurantAction } from "../actions/restaurants/blockRestaurantAction";
+import { RestaurantType } from "@/types/restaurant";
 
 interface RestaurantState {
   loading: boolean;
-  data: any[];
+  data: RestaurantType[];
   error: string | null;
+    totalPages?: number;
+  totalCount?: number;
 }
 
 const initialState: RestaurantState = {
   loading: false,
   data: [],
   error: null,
+  totalPages: undefined,
+  totalCount: undefined,
 };
 
 const restaurantSlice = createSlice({

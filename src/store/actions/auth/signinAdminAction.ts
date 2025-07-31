@@ -1,9 +1,10 @@
 import { adminEndPoint } from "@/constants/endPointsUrl";
 import api from "@/lib/axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
+import { AxiosError } from "axios";
 
 export const signinAdminAction = createAsyncThunk(
-  "restaurant/signinAdmin",
+  "/restaurant/signinAdmin",
   async (
     {email, password}
     : {
@@ -13,11 +14,12 @@ export const signinAdminAction = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.post(adminEndPoint.LOGIN, {email, password});
+      const response = await api.post(`${adminEndPoint.AUTH}/login`, {email, password});
       return response.data;
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as AxiosError<{ message: string }>;
       return rejectWithValue(
-        err.response?.data?.message || "Failed to fetch tables"
+        error.response?.data?.message || "Failed to sign in admin"
       );
     }
   }
